@@ -31,6 +31,11 @@ def make_model(
     # gptqmodel only
     gptqmodel_backend: str = "auto",
     gguf_file: str = None,
+    # peft_moe only
+    base_model: Optional[str] = None,
+    adapter_path: Optional[str] = None,
+    routing_strategy: str = "router",
+    wandb_artifact: Optional[str] = None,
     **kwargs,
 ) -> DecoderBase:
     if backend == "vllm":
@@ -155,4 +160,25 @@ def make_model(
             response_prefix=response_prefix,
             trust_remote_code=trust_remote_code,
             gptqmodel_backend=gptqmodel_backend,
+        )
+    elif backend == "peft_moe":
+        from evalplus.provider.peft_moe import PeftMoEDecoder
+
+        return PeftMoEDecoder(
+            name=model,
+            dataset=dataset,
+            base_model=base_model,
+            adapter_path=adapter_path,
+            routing_strategy=routing_strategy,
+            wandb_artifact=wandb_artifact,
+            batch_size=batch_size,
+            temperature=temperature,
+            force_base_prompt=force_base_prompt,
+            instruction_prefix=instruction_prefix,
+            response_prefix=response_prefix,
+            attn_implementation=attn_implementation,
+            device_map=device_map,
+            trust_remote_code=trust_remote_code,
+            dtype=dtype,
+            **kwargs,
         )
