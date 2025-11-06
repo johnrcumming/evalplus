@@ -261,9 +261,12 @@ class PeftMoEDecoder(DecoderBase):
                 "Install with: pip install wandb"
             )
         
-        # Initialize offline run for artifact download
-        # Use offline mode to avoid creating unnecessary runs
-        with wandb.init(mode="offline", anonymous="allow") as run:
+        # Initialize W&B run for artifact download
+        # Use online mode to enable artifact downloads, but disable syncing to avoid creating runs
+        import os
+        os.environ['WANDB_SILENT'] = 'true'  # Suppress W&B output
+        
+        with wandb.init(mode="online", anonymous="allow", settings=wandb.Settings(silent=True)) as run:
             artifact = run.use_artifact(artifact_path, type='model')
             artifact_dir = artifact.download()
         
