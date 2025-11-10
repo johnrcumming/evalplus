@@ -35,6 +35,7 @@ Who's using EvalPlus datasets? EvalPlus has been used by various LLM teams, incl
 
 Below tracks the notable updates of EvalPlus:
 
+- **[2025-01-10 Fork]**: Added PEFT MoE support! Evaluate DyLoRA-MoE, X-LoRA, and other MoE architectures with flexible routing strategies. See [PEFT MoE Models](#peft-moe-models-dylora-moe-x-lora-etc) section.
 - **[2024-10-20 `v0.3.1`]**: EvalPlus `v0.3.1` is officially released! Highlights: *(i)* Code efficiency evaluation via EvalPerf, *(ii)* one command to run all: generation + post-processing + evaluation, *(iii)* support for more inference backends such as Google Gemini & Anthropic, etc.
 - **[2024-06-09 pre `v0.3.0`]**: Improved ground-truth solutions for MBPP+ tasks (IDs: 459, 102, 559). Thanks to [EvalArena](https://github.com/crux-eval/eval-arena).
 - **[2024-04-17 pre `v0.3.0`]**: MBPP+ is upgraded to `v0.2.0` by removing some broken tasks (399 -> 378 tasks). ~4pp pass@1 improvement could be expected.
@@ -327,6 +328,54 @@ PT_HPU_LAZY_MODE=1 evalplus.evaluate --model "qwen/CodeQwen1.5-7B-Chat" \
                   --greedy
 ```
 You can checkout the generation and results at `evalplus_results/[humaneval|mbpp]/`
+
+### PEFT MoE Models (DyLoRA-MoE, X-LoRA, etc.)
+
+EvalPlus supports evaluation of PEFT (Parameter-Efficient Fine-Tuning) models with Mixture-of-Experts (MoE) architectures:
+
+```bash
+# Evaluate DyLoRA-MoE model with router
+evalplus.evaluate --model "./trained_model"          \
+                  --dataset [humaneval|mbpp]         \
+                  --backend peft_moe                 \
+                  --base-model "google/codegemma-2b" \
+                  --routing-strategy router          \
+                  --greedy
+
+# Evaluate with single expert (expert 0)
+evalplus.evaluate --model "./trained_model"          \
+                  --dataset [humaneval|mbpp]         \
+                  --backend peft_moe                 \
+                  --base-model "google/codegemma-2b" \
+                  --routing-strategy "single:0"      \
+                  --greedy
+
+# Evaluate from W&B artifact
+evalplus.evaluate --model "user/project/model:v0"           \
+                  --dataset [humaneval|mbpp]                \
+                  --backend peft_moe                        \
+                  --wandb-artifact "user/project/model:v0"  \
+                  --base-model "google/codegemma-2b"        \
+                  --greedy
+```
+
+**Routing Strategies:**
+- `router`: Use model's internal MoE router (default)
+- `single:<id>`: Use specific expert (e.g., `single:0`, `single:1`)
+- `best`: Analyze prompt and select best expert (future enhancement)
+- `ensemble`: Generate with all experts and combine outputs (future enhancement)
+- `round_robin`: Cycle through experts (future enhancement)
+
+**Model Format Detection:**
+- **DyLoRA-MoE**: Automatically detected via `config.json` markers or `dylo_moe_state/` directory
+  - Loads separated PEFT adapters from `peft_adapters/` directory
+  - Loads router state from `dylo_moe_state/router.pt`
+- **Standard PEFT**: Detected via `adapter_config.json`
+- **Merged Models**: Detected via `model.safetensors` or `pytorch_model.bin`
+
+**Requirements:**
+- For DyLoRA-MoE models, ensure `dylo_moe` package is available in `PYTHONPATH`
+- Set `HF_TOKEN` environment variable for accessing gated models (e.g., CodeGemma)
 
 <details><summary>⏬ Using EvalPlus as a local repo? <i>:: click to expand ::</i></summary>
 <div>
