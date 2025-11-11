@@ -137,11 +137,26 @@ class PeftMoEDecoder(DecoderBase):
     def _load_model(self):
         """Load PEFT MoE model based on detected format."""
         
+        # Step 0: Handle adapter_path if provided (takes precedence)
+        if self.adapter_path:
+            print(f"ℹ️  Using explicit adapter_path: {self.adapter_path}")
+            self.model_path = self.adapter_path
+        
         # Step 1: Handle W&B artifact if provided
-        if self.wandb_artifact:
-            print(f"Downloading W&B artifact: {self.wandb_artifact}")
-            self.model_path = self._load_from_wandb_artifact(self.wandb_artifact)
-            print(f"✓ Artifact downloaded to: {self.model_path}")
+        # Check if wandb_artifact is actually a local path (not a W&B artifact)
+        elif self.wandb_artifact:
+            # W&B artifacts have format: "entity/project/artifact:version"
+            # Local paths don't have this format
+            is_local_path = os.path.exists(self.wandb_artifact) or "/" in self.wandb_artifact and not ":" in os.path.basename(self.wandb_artifact)
+            
+            if is_local_path:
+                print(f"ℹ️  Treating wandb_artifact as local path: {self.wandb_artifact}")
+                self.model_path = self.wandb_artifact
+                self.wandb_artifact = None  # Clear it so we don't try to download
+            else:
+                print(f"Downloading W&B artifact: {self.wandb_artifact}")
+                self.model_path = self._load_from_wandb_artifact(self.wandb_artifact)
+                print(f"✓ Artifact downloaded to: {self.model_path}")
         
         # Step 2: Detect model format
         self.model_format = self._detect_model_format(self.model_path)
