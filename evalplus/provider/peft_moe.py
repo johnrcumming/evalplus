@@ -19,6 +19,11 @@ import json
 import torch
 from pathlib import Path
 
+# Enable MPS fallback to CPU for unsupported operations
+# This is needed for some PyTorch operations that aren't yet implemented on MPS
+# See: https://github.com/pytorch/pytorch/issues/141287
+os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
+
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
