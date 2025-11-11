@@ -118,13 +118,20 @@ def reliability_guard(maximum_memory_bytes: Optional[int] = None):
         if underlying_platform != "Windows":
             import resource
 
-            resource.setrlimit(
-                resource.RLIMIT_AS, (maximum_memory_bytes, maximum_memory_bytes)
-            )
-            resource.setrlimit(
-                resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes)
-            )
-            if not underlying_platform == "Darwin":
+            # macOS (Darwin) has stricter resource limit restrictions
+            # Skip memory limit enforcement on macOS to avoid errors
+            if underlying_platform == "Darwin":
+                # On macOS, resource limits often fail with "current limit exceeds maximum limit"
+                # This is a known limitation of macOS's BSD-based resource management
+                pass
+            else:
+                # Linux: Set memory limits normally
+                resource.setrlimit(
+                    resource.RLIMIT_AS, (maximum_memory_bytes, maximum_memory_bytes)
+                )
+                resource.setrlimit(
+                    resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes)
+                )
                 resource.setrlimit(
                     resource.RLIMIT_STACK, (maximum_memory_bytes, maximum_memory_bytes)
                 )

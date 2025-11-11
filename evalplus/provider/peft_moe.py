@@ -106,8 +106,13 @@ class PeftMoEDecoder(DecoderBase):
         self.device_map = device_map
         self.dataset = dataset
         
-        # Device setup
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Device setup - check for CUDA, MPS, or fallback to CPU
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
         
         # Model format detection
         self.model_format = None
@@ -388,7 +393,9 @@ class PeftMoEDecoder(DecoderBase):
         if router_state_path.exists():
             print(f"Loading router state from: {router_state_path}")
             try:
-                model.router.load(str(router_state_path))
+                # Load router with proper device mapping
+                from dylo_moe.router import DynamicHybridRouter
+                model.router = DynamicHybridRouter.load(str(router_state_path), device=self.device)
                 print(f"✓ Loaded router state")
             except Exception as e:
                 print(f"⚠️  Failed to load router state: {e}")
