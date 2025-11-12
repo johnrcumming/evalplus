@@ -142,6 +142,11 @@ def run_codegen(
     dtype: str = "bfloat16",
     gptqmodel_backend: str = "auto",  # For GPTQModel
     gguf_file: Optional[str] = None,
+    # peft_moe backend specific
+    base_model: Optional[str] = None,
+    adapter_path: Optional[str] = None,
+    routing_strategy: str = "router",
+    wandb_artifact: Optional[str] = None,
     **kwargs,
 ):
     assert dataset in ["humaneval", "mbpp", "evalperf"], f"Invalid dataset {dataset}"
@@ -253,6 +258,10 @@ def run_codegen(
         dtype=dtype,
         gptqmodel_backend=gptqmodel_backend,
         gguf_file=gguf_file,
+        base_model=base_model,
+        adapter_path=adapter_path,
+        routing_strategy=routing_strategy,
+        wandb_artifact=wandb_artifact,
         **kwargs,
     )
 
